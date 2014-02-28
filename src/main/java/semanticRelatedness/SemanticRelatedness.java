@@ -3,7 +3,6 @@ package semanticRelatedness;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -13,10 +12,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 //import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -105,7 +101,7 @@ public class SemanticRelatedness {
 						yArray[i] = explicitSemanticAnalysis(parts[0], parts[1]);
 					}
 					else if(algotithm.equals("NRD")) {
-						yArray[i] = normalizedRelatednessDistance(parts[0], parts[1]);
+						yArray[i] = normalizedRelevanceDistance(parts[0], parts[1]);
 					}
 					else if(algotithm.equals("2gram")) {
 						yArray[i] = twogram(parts[0], parts[1]);
@@ -265,7 +261,7 @@ public class SemanticRelatedness {
 	}
 
 
-	public static double normalizedRelatednessDistance(String term0, String term1) throws ParseException, IOException {
+	public static double normalizedRelevanceDistance(String term0, String term1) throws ParseException, IOException {
 		Query query0 = parser.parse(term0);
 		Query query1 = parser.parse(term1);
 
