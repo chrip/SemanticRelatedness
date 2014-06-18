@@ -214,9 +214,9 @@ public class GabToLucene {
 			        }
 			        iArticleCount++;
 			        Document doc = new Document();
-			         title += " ";
+			         String tmpTitle = " " + title;
 			         for(int i = 0; i < stats.titleWeight-1; i++) {
-			        	 title += title; 
+			        	 title += tmpTitle; 
 			         }
 			         if(stats.anchorText.equals("ALL")) {
 				         if(anchors.containsKey(id)) {
@@ -343,3 +343,4 @@ public class GabToLucene {
 			};
 		    public static final Set<String> stopWordSet = new HashSet<String>(Arrays.asList(stopWords));
 }
+

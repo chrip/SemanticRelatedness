@@ -24,6 +24,7 @@ import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig.OpenMode;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.search.similarities.DefaultSimilarity;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
@@ -96,7 +97,8 @@ public class MakeLuceneIndex {
 			// Create a new index in the directory, removing any
 			// previously indexed documents:
 			iwc.setOpenMode(OpenMode.CREATE);
-			iwc.setSimilarity(new ESASimilarity());
+			iwc.setSimilarity(new DefaultSimilarity());
+			//iwc.setSimilarity(new ESASimilarity());
 
 			// Optional: for better indexing performance, if you
 			// are indexing many documents, increase the RAM
@@ -243,7 +245,4 @@ public class MakeLuceneIndex {
 		}
 	}
 }
-
-
-
 
