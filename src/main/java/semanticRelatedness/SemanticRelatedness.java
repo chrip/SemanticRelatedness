@@ -112,6 +112,9 @@ public class SemanticRelatedness {
 					else if(algotithm.equals("5gram")) {
 						yArray[i] = fivegram(parts[0], parts[1]);
 					}
+					else if(algotithm.equals("PMI")) {
+						yArray[i] = pointwiseMutualInformation(parts[0], parts[1]);
+					}
 					if(yArray[i] < 0 || yArray[i] > 1) {
 						//System.out.println("correlation: " + algotithm + " " + yArray[i] + " " + datasetName + " " + parts[0] + " " + parts[1]);
 					}
@@ -170,7 +173,7 @@ public class SemanticRelatedness {
 		maxlog = Math.max(log0, log1);
 		minlog = Math.min(log0, log1);
 
-		return 1 - (maxlog - logCommon) / (Math.log(reader.numDocs()) - minlog); 
+		return Math.exp(-2* (maxlog - logCommon) / (Math.log(reader.numDocs()) - minlog)); 
 
 	}
 
@@ -277,7 +280,7 @@ public class SemanticRelatedness {
 		TopDocs results1 = tfc1.topDocs();
 
 		if(tfc0.getTotalHits() < 1 || tfc1.getTotalHits() < 1) {
-			return 0;
+			return 0.5;
 		}
 
 		double log0, log1 , logCommon, maxlog, minlog;
@@ -286,13 +289,13 @@ public class SemanticRelatedness {
 		log1 = Math.log(sumScores(results1));
         double commonScore = sumCommonScores(results0, results1, term0, term1);
 		if(commonScore == 0) {
-			return 0;
+			return 0.5;
 		}
 		logCommon = Math.log(commonScore);
 		maxlog = Math.max(log0, log1);
 		minlog = Math.min(log0, log1);
-
-		return 1 - (maxlog - logCommon) / (Math.log(reader.numDocs()) - minlog); 
+    
+		return  Math.exp(-2*  (maxlog - logCommon) / (Math.log(reader.numDocs()) - minlog));
 	}
 
 
@@ -722,6 +725,33 @@ public class SemanticRelatedness {
 
 		}
 		return scalar;
+	}
+	
+	public static double pointwiseMutualInformation(String term0, String term1) throws ParseException, IOException {
+		Query query0 = parser.parse(term0);
+		Query query1 = parser.parse(term1);
+
+		Sort sort0 = new Sort(SortField.FIELD_DOC); 
+		TopFieldCollector tfc0 = TopFieldCollector.create(sort0, reader.numDocs(), true, true, true, true); 
+		
+		Sort sort1 = new Sort(SortField.FIELD_DOC); 
+		TopFieldCollector tfc1 = TopFieldCollector.create(sort1, reader.numDocs(), true, true, true, true); 
+
+		searcher.search(query0, tfc0);
+		TopDocs results0 = tfc0.topDocs();
+		searcher.search(query1, tfc1);
+		TopDocs results1 = tfc1.topDocs();
+
+		if(tfc0.getTotalHits() < 1 || tfc1.getTotalHits() < 1) {
+			return 0;
+		}
+
+        double commonScore = sumCommonScores(results0, results1, term0, term1);
+		if(commonScore == 0) {
+			return 0;
+		}
+
+		return Math.log((commonScore/(reader.numDocs()*reader.numDocs())) / (sumScores(results0) * sumScores(results1))/reader.numDocs()) / Math.log(2); 
 	}
 
 	public static double cosine(String term0, String term1, String p) {
