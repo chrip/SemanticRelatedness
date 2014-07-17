@@ -66,8 +66,8 @@ public class SemanticRelatedness {
 
 
 //		Analyzer analyzer = new WikipediaAnalyzer(_stats);
-		Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_43);
-		parser = new QueryParser(Version.LUCENE_43, field, analyzer);
+		Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_4_9);
+		parser = new QueryParser(Version.LUCENE_4_9, field, analyzer);
 
 		
 		for(String datasetName: _stats.datasets) {
@@ -333,14 +333,14 @@ public class SemanticRelatedness {
 
 		int totalDocs = reader.numDocs();
 
-		String term0Parsed = query0.toString();
-		String term1Parsed = query1.toString();
+		String term0Parsed = query0.toString(field);
+		String term1Parsed = query1.toString(field);
 		if (term0Parsed.equals("") || term1Parsed.equals("")) {
 			return 0;
 		}
 
-		Term t0 = new Term(field, term0Parsed.substring(field.length()+1));
-		Term t1 = new Term(field, term1Parsed.substring(field.length()+1));
+		Term t0 = new Term(field, term0Parsed);
+		Term t1 = new Term(field, term1Parsed);
 		int docFreq0 = reader.docFreq(t0);
 		int docFreq1 = reader.docFreq(t1);
 		
