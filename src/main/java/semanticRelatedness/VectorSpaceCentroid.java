@@ -28,9 +28,18 @@ public class VectorSpaceCentroid {
 	static DefaultSimilarity similarity;
 	HashMap<String, Integer> parsedTokensCount;
 	HashMap<String, Query> parsedQueries;
-	HashMap<Integer, Double> centroid;
 	
+	HashMap<Integer, Double> centroid; // docId and tfidf 
+	public HashMap<Integer, Double> getCentroid() {
+		return centroid;
+	}
+
+	double maxScore = 0;
 	
+	public double getMaxScore() {
+		return maxScore;
+	}
+
 	VectorSpaceCentroid(String luceneIndexPath, String text) throws IOException, ParseException {
 		reader = DirectoryReader.open(FSDirectory.open(new File(luceneIndexPath)));
 		Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_4_9);
@@ -84,7 +93,53 @@ public class VectorSpaceCentroid {
 			tfidfSum += tfidf;
 		}
 		for (Map.Entry<Integer, Double> entry : centroid.entrySet()) {
-			entry.setValue(entry.getValue()/tfidfSum);
+			double score = entry.getValue()/tfidfSum;
+			entry.setValue(score);
+			maxScore = Math.max(score, maxScore);
 	    }
+	}
+
+	private static double sumCommonScores(VectorSpaceCentroid centroid0, VectorSpaceCentroid centroid1){
+		double sum = 0;
+		double maxScore0 = centroid0.getMaxScore();
+		double maxScore1 = centroid1.getMaxScore();
+
+		for (final Map.Entry<Integer, Double> entry : centroid0.getCentroid().entrySet()) {
+			int doc0 = entry.getKey();
+
+			if (centroid0.getCentroid().containsKey(doc0)) {
+				double score0 = entry.getValue();
+				double score1 = centroid1.getCentroid().get(doc0);
+				double sim1AND2 = (score0/maxScore0)  * (score1/maxScore1);
+				sum += sim1AND2;				 
+			}			
+		}
+		return sum;
+	}
+	
+	public static double normalizedRelevanceDistance(VectorSpaceCentroid centroid0, VectorSpaceCentroid centroid1){
+		double log0, log1 , logCommon, maxlog, minlog;
+
+		log0 = Math.log(sumScores(centroid0));
+		log1 = Math.log(sumScores(centroid1));
+        double commonScore = sumCommonScores(centroid0, centroid1);
+		if(commonScore == 0) {
+			return 0.5;
+		}
+		logCommon = Math.log(commonScore);
+		maxlog = Math.max(log0, log1);
+		minlog = Math.min(log0, log1);
+    
+		return  Math.exp(-2*  (maxlog - logCommon) / (Math.log(reader.numDocs()) - minlog));
+	}
+	
+	private static double sumScores(VectorSpaceCentroid centroid) {
+		double sum = 0.0; 
+		double maxScore = centroid.getMaxScore();
+
+		for (double score : centroid.getCentroid().values()) {
+			sum += (score/maxScore);
+		}
+		return sum;
 	}
 }
