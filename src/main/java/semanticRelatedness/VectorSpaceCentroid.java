@@ -34,7 +34,7 @@ public class VectorSpaceCentroid {
 		return centroid;
 	}
 
-	double maxScore = 0;
+	double maxScore;
 	
 	public double getMaxScore() {
 		return maxScore;
@@ -50,7 +50,8 @@ public class VectorSpaceCentroid {
 		parsedTokensCount  = new HashMap<String, Integer>();
 		parsedQueries = new HashMap<String, Query>();
 		centroid = new HashMap<Integer, Double>();
-		
+		maxScore = 0;
+				
 		String[] tokens = text.split("\\s+");
 		
 		for(String token: tokens) {
@@ -107,7 +108,7 @@ public class VectorSpaceCentroid {
 		for (final Map.Entry<Integer, Double> entry : centroid0.getCentroid().entrySet()) {
 			int doc0 = entry.getKey();
 
-			if (centroid0.getCentroid().containsKey(doc0)) {
+			if (centroid1.getCentroid().containsKey(doc0)) {
 				double score0 = entry.getValue();
 				double score1 = centroid1.getCentroid().get(doc0);
 				double sim1AND2 = (score0/maxScore0)  * (score1/maxScore1);
