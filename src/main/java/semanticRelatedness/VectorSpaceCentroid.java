@@ -2,42 +2,46 @@ package semanticRelatedness;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.similarities.DefaultSimilarity;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
 
 public class VectorSpaceCentroid {
-	static QueryParser parser;
-	static IndexReader reader;
-	static IndexSearcher searcher;
-	static String field = "contents";
-	static DefaultSimilarity similarity;
-	HashMap<String, Integer> parsedTokensCount;
-	HashMap<String, Query> parsedQueries;
+	QueryParser parser;
+	IndexReader reader;
+	IndexSearcher searcher;
+	String field = "contents";
+	DefaultSimilarity similarity;
 	
 	HashMap<Integer, Double> centroid; // docId and tfidf 
+	double maxScore;
+	int totalDocs;
+	
 	public HashMap<Integer, Double> getCentroid() {
 		return centroid;
 	}
-
-	double maxScore;
-	
 	public double getMaxScore() {
 		return maxScore;
+	}
+	public double numDocs() {
+		return totalDocs;
 	}
 
 	VectorSpaceCentroid(String luceneIndexPath, String text) throws IOException, ParseException {
@@ -47,38 +51,53 @@ public class VectorSpaceCentroid {
 		similarity = new DefaultSimilarity();
 		searcher = new IndexSearcher(reader);
 		searcher.setSimilarity(similarity);
-		parsedTokensCount  = new HashMap<String, Integer>();
-		parsedQueries = new HashMap<String, Query>();
+				
+		buildCentroid(text);
+	}
+
+	public VectorSpaceCentroid(IndexReader reader2, IndexSearcher searcher2,
+			DefaultSimilarity similarity2, QueryParser parser2, String text) throws ParseException, IOException {
+		reader = reader2;
+		parser = parser2;
+		similarity = similarity2;
+		searcher = searcher2;
+		
+		buildCentroid(text);
+	}
+
+	public void buildCentroid(String text) throws ParseException, IOException {
+		HashMap<String, Integer> parsedTokensCount  = new HashMap<String, Integer>();
 		centroid = new HashMap<Integer, Double>();
 		maxScore = 0;
-				
-		String[] tokens = text.split("\\s+");
 		
-		for(String token: tokens) {
-			Query query = parser.parse(token);
-			String termParsed = query.toString(field);
-			if (termParsed.equals("")) {
-				continue;
-			}
-			if(parsedTokensCount.containsKey(termParsed)){
-				parsedTokensCount.put(termParsed, parsedTokensCount.get(termParsed)+1);
+		
+		TokenStream ts = parser.getAnalyzer().tokenStream(field, new StringReader(text));
+		CharTermAttribute termAttr = ts.addAttribute(CharTermAttribute.class);
+        ts.reset();
+
+        int numTerms = 0;
+        while (ts.incrementToken()) {
+            String token = termAttr.toString();
+            if(parsedTokensCount.containsKey(token)){
+				parsedTokensCount.put(token, parsedTokensCount.get(token)+1);
 			}
 			else {
-				parsedTokensCount.put(termParsed, 1);
-				parsedQueries.put(termParsed, query);
+				parsedTokensCount.put(token, 1);
 			}
-		}
+			numTerms++;
+        }
+        ts.end();
+        ts.close();
 		
-		int totalDocs = reader.numDocs();
+		totalDocs = reader.numDocs();
 		double tfidfSum = 0;
 		for (String parsedToken : parsedTokensCount.keySet()) {
 			int termFreq = parsedTokensCount.get(parsedToken);
 			Term term = new Term(field, parsedToken);
 			int docFreq = reader.docFreq(term);
 			double idf = similarity.idf(docFreq, totalDocs);
-			double tfidf = similarity.tf(termFreq) * idf;
-			
-			TopDocs results =searcher.search(parsedQueries.get(parsedToken), totalDocs);
+			double tfidf = (similarity.tf(termFreq) * Math.pow(idf, 2));
+			TopDocs results =searcher.search(new TermQuery(term, docFreq), totalDocs);
 			
 			if(results.totalHits < 1) {
 				continue;
@@ -131,7 +150,7 @@ public class VectorSpaceCentroid {
 		maxlog = Math.max(log0, log1);
 		minlog = Math.min(log0, log1);
     
-		return  Math.exp(-2*  (maxlog - logCommon) / (Math.log(reader.numDocs()) - minlog));
+		return  Math.exp(-2*  (maxlog - logCommon) / (Math.log(centroid0.numDocs()) - minlog));
 	}
 	
 	private static double sumScores(VectorSpaceCentroid centroid) {
