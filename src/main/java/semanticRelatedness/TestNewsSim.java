@@ -76,9 +76,11 @@ public class TestNewsSim {
 				if(i > j) {
 					val = 0.0;
 				}
-//				else if (i == j) {
-//					result[i][j] = 1.0;
-//				}
+				else if (i == j) {
+					val = 1.0;
+					result[index] = val;
+					index++;
+				}
 				else {
 					val = VectorSpaceCentroid.normalizedRelevanceDistance(leesCorpus[i], leesCorpus[j]);
 					result[index] = val;

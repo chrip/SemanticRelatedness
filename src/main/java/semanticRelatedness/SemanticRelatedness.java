@@ -289,13 +289,13 @@ public class SemanticRelatedness {
 		log1 = Math.log(sumScores(results1));
         double commonScore = sumCommonScores(results0, results1, term0, term1);
 		if(commonScore == 0) {
-			return 0.5;
+			return 0.0;
 		}
 		logCommon = Math.log(commonScore);
 		maxlog = Math.max(log0, log1);
 		minlog = Math.min(log0, log1);
     
-		return  Math.exp(-2*  (maxlog - logCommon) / (Math.log(reader.numDocs()) - minlog));
+		return Math.exp(-2 * (maxlog - logCommon) / (Math.log(reader.numDocs()) - minlog));
 	}
 
 
