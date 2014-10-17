@@ -118,8 +118,8 @@ public class VectorSpaceCentroid {
 					score = tfidf * doc.score;
 					centroidMap.put(doc.doc, score);
 				}
+                            maxScore = Math.max(score, maxScore);
 			}
-			maxScore = Math.max(score, maxScore);
 		}
 		double sum = 0.0; 
 		for (Map.Entry<Integer, Double> entry : centroidMap.entrySet()) {
