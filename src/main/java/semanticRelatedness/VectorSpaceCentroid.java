@@ -98,9 +98,12 @@ public class VectorSpaceCentroid {
 			int termFreq = parsedTokensCount.get(parsedToken);
 			Term term = new Term(field, parsedToken);
 			int docFreq = reader.docFreq(term);
+                        if(docFreq==0){
+                            continue;
+                        }
 			double idf = similarity.idf(docFreq, totalDocs);
 			double tfidf = (similarity.tf(termFreq) * Math.pow(idf, 2));
-			TopDocs results =searcher.search(new TermQuery(term, docFreq), totalDocs);
+			TopDocs results = searcher.search(new TermQuery(term, docFreq), docFreq);
 			
 			if(results.totalHits < 1) {
 				continue;
@@ -115,8 +118,8 @@ public class VectorSpaceCentroid {
 					score = tfidf * doc.score;
 					centroidMap.put(doc.doc, score);
 				}
+                            maxScore = Math.max(score, maxScore);
 			}
-			maxScore = Math.max(score, maxScore);
 		}
 		double sum = 0.0; 
 		for (Map.Entry<Integer, Double> entry : centroidMap.entrySet()) {
